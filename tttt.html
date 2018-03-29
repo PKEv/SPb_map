@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+       }
+    </style>
+  </head>
+  <body>
+    <h3>My Google Maps Demo</h3>
+    <div id="map"></div>
+    <script>
+      function initMap() {
+        var uluru = {lat: 59.911998, lng: 30.31634};
+		var uluru2 = {lat: 59.912125, lng: 30.321667};
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 8,
+          center: uluru
+        });
+        var marker = new google.maps.Marker({
+          position: uluru,
+          map: map,
+		  title: "точка 1"
+        });
+		var marker2 = new google.maps.Marker({
+          position: uluru2,
+          map: map,
+		  title: "точка 2"
+        });
+		
+		var contentString = '<div id="content">Тут всё то про что должно быть рассказано</div>';
+		var infowindow = new google.maps.InfoWindow({content: contentString});
+		
+		google.maps.event.addListener(marker, 'click', function() {
+			infowindow.open(map,marker);
+			});
+      }
+    </script>
+    <script async defer
+		src="https://maps.googleapis.com/maps/api/js?callback=initMap">
+    </script>
+  </body>
+</html>
