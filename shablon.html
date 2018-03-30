@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+       }
+    </style>
+  </head>
+  <body>
+    <h3>My Google Maps Demo</h3>
+    <div id="map"></div>
+    <script>
+	var map, infoWindow;
+      function initMap() {
+	  
+		var markersData = [
+
+		];
+		
+		var center = {lat: 59.939060, lng: 30.315124};
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 10,
+          center: center
+        });
+		
+		infoWindow = new google.maps.InfoWindow();
+		// Отслеживаем клик в любом месте карты
+		google.maps.event.addListener(map, "click", function() {
+			// infoWindow.close - закрываем информационное окно.
+			infoWindow.close();
+		});
+		
+		for (var i = 0; i < markersData.length; i++){
+			var latLng = new google.maps.LatLng(markersData[i].lat, markersData[i].lng);
+			var name = String(markersData[i].name);
+			//var address = markersData[i].address;
+			// Добавляем маркер с информационным окном
+			addMarker(latLng, name);
+		}		
+      }
+	  // Функция добавления маркера с информационным окном
+		function addMarker(latLng, name) {
+			var marker = new google.maps.Marker({
+				position: latLng,
+				map: map,
+				title: name
+			});
+			google.maps.event.addListener(marker, "click", function() {
+				// contentString - это переменная в которой хранится содержимое информационного окна.
+				var contentString = '<div class="infowindow">' +
+										'<a href="http://gorod.gov.spb.ru/problems/' + name + '" target="_blank"><h3> Проблема №' + name + '</h3></a>' +
+									'</div>';
+				// Меняем содержимое информационного окна
+				infoWindow.setContent(contentString);
+				// Показываем информационное окно
+				infoWindow.open(map, marker);
+			});
+		}
+    </script>
+    <script async defer
+		src="https://maps.googleapis.com/maps/api/js?callback=initMap">
+    </script>
+  </body>
+</html>

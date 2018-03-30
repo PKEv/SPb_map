@@ -4,9 +4,13 @@ from lxml import html
 from lxml import etree
 import io
 
-userId = 47305
+#userId = 47305 #кустов
+userId = 58004 #макаров
+#userId = 7209 # Петр Г.
 mainLink = "http://gorod.gov.spb.ru"
 pageNumber = 1
+problemsOnPage = 30
+
 
 class Problem(object):
     def __init__(self):
@@ -17,10 +21,10 @@ class Problem(object):
         self.lng = 0.0
 
     def toString(self):
-        out = "Проблема" + "\n" + "Ссылка:" + self.link + "\n" + "Адрес:" + self.address + "\n"
+        out = "Проблема " + str(self.nomer) + "\n" + "Ссылка:" + self.link + "\n" + "Адрес:" + self.address + "\n"
         out += "Координаты: " + str(self.lat) + ", " + str(self.lng) + "\n"
-
         return out
+
 
 def parseCoordPage(problem):
     url = problem.link + "map/"
@@ -45,44 +49,65 @@ def parseCoordPage(problem):
     problem.lng = lng
 
 
+def writeMapFile(problems):
+    lineStart = 18
+    lineTitle = 12
+    with open('shablon.html', 'r', encoding="utf-8") as f:
+        shablonFile = list(f)
+    my_file = open("map_new.html", 'w', encoding="utf-8")
 
-url = mainLink + "/accounts/" + str(userId) + "/?per_page=60&page=" + str(pageNumber)
+    #Заменяем заголовок
+    shablonFile[lineTitle - 1] = "<h3>Карта обращений поданных пользователем <a href=\"http://gorod.gov.spb.ru/accounts/"+ str(userId) +"\" target=\"_blank\">" + str(userId) + "</a></h3>"
+
+    for ii in range (0, lineStart):
+        my_file.write(shablonFile[ii])
+
+    first = 1
+    for problem in problems:
+        if first == 1:
+            first = 2
+        else:
+            my_file.write("         , ")
+        my_file.write("{lat:" + str(problem.lat) + ",lng:" + str(problem.lng) + ",name:" + str(problem.nomer) + "} \n")
+
+    for ii in range(lineStart, len(shablonFile)):
+        my_file.write(shablonFile[ii])
+
+    my_file.close()
+
+
+
+url = mainLink + "/accounts/" + str(userId) + "/?per_page=" + str(problemsOnPage) + "&page=" + str(pageNumber)
 
 r = requests.get(url)
 
-with io.open('test.html', 'w', encoding="utf-8") as output_file:
+with open('test.html', 'w', encoding="utf-8") as output_file:
   output_file.write(r.text)
 
 ht = r.text
-
 tree = html.fromstring(ht)
-
-# print tree.xpath('//div[contains(@class, \'row block-messages-container\')]//a')[0]
+# читаем основные моменты
 problems_links = tree.xpath('.//div[contains(@class, "row block-messages-container")]//a/@href')
-
 address_list = tree.xpath('.//div[contains(@class, "address")]/@title')
-
 pagesCount = tree.xpath('.//div[contains(@class, "btn-toolbar")]//a[contains(@class, "btn btn-default rounded")]/.')[0]
 
-
+print("Total pages: " + str(pagesCount.text) + "\n")
 problems = list()
 
-#for page in range (1, int(pagesCount.text) + 1 ):
-for page in range(1, 2):
+for page in range (1, int(pagesCount.text) + 1 ):
+# для тестов
+#for page in range(1, 2):
 
-    url = mainLink + "/accounts/" + str(userId) + "/?per_page=60&page=" + str(page)
+    print("Current page: " + str(page )+ "/" + str(pagesCount.text) + "\n")
+
+    url = mainLink + "/accounts/" + str(userId) + "/?per_page=" + str(problemsOnPage) + "&page=" + str(page)
 
     r = requests.get(url)
-
-    with io.open('test.html', 'w', encoding="utf-8") as output_file:
-        output_file.write(r.text)
-
     ht = r.text
-
     tree = html.fromstring(ht)
 
+    #читаем в списки
     problems_links = tree.xpath('.//div[contains(@class, "row block-messages-container")]//a/@href')
-
     address_list = tree.xpath('.//div[contains(@class, "address")]/@title')
 
     i = 0
@@ -90,34 +115,16 @@ for page in range(1, 2):
         prob = Problem()
         prob.address = address_list[i]
         prob.link = mainLink + link
+        addrList = str(link).split("/")
+        prob.nomer = addrList[2]
         i = i + 1
         parseCoordPage(prob)
         problems.append(prob)
+        print("Current problem: " + str(i) + "/" + str(len(problems_links)) + "\n")
 
 
 with open('problems.html', 'w') as output3_file:
-    output3_file.write("Всего страниц: " + pagesCount.text)
     for problem in problems:
         output3_file.write(problem.toString() + "\n")
 
-
-
-
-
-
-
-
-
-
-
-#
-#with open('links.html', 'w') as output1_file:
-#    for problem in problems_links:
-#        output1_file.write("http://gorod.gov.spb.ru" + problem + "\n")
-#
-#with open('address.html', 'w', encoding='utf-8') as output2_file:
-#    for problem in address_list:
-#        # output2_file.write(etree.tostring(problem).decode('utf-8'))
-#        # output2_file.write(str(problem).encode('cp1251').decode() + "\n")
-#        output2_file.write(str(problem) + "\n")
-
+writeMapFile(problems)
